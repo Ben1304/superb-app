@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superb — Choose your plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f8fafc;color:#0f172a;min-height:100vh}
+nav{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 2rem;background:white;border-bottom:1px solid #e2e8f0}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:17px}
+.logo-text{font-size:16px;font-weight:600;color:#0f172a}
+.secure-badge{font-size:12px;color:#64748b;display:flex;align-items:center;gap:5px}
+.main{max-width:900px;margin:0 auto;padding:3rem 1.5rem}
+.page-title{font-size:26px;font-weight:600;margin-bottom:6px;text-align:center}
+.page-sub{font-size:14px;color:#64748b;text-align:center;margin-bottom:2.5rem}
+.trial-badge{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#16a34a;font-size:13px;font-weight:500;padding:6px 14px;border-radius:20px;margin-bottom:2rem}
+
+/* PLAN SELECTOR */
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:2rem}
+.plan-card{border:2px solid #e2e8f0;border-radius:14px;padding:1.25rem;cursor:pointer;transition:all .15s;background:white;position:relative}
+.plan-card:hover{border-color:#16a34a}
+.plan-card.selected{border-color:#16a34a;background:#f0fdf4}
+.plan-card.featured{border-color:#16a34a}
+.plan-popular{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.plan-radio{width:18px;height:18px;border-radius:50%;border:2px solid #e2e8f0;margin-bottom:.75rem;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.plan-card.selected .plan-radio{border-color:#16a34a;background:#16a34a}
+.plan-radio-dot{width:8px;height:8px;border-radius:50%;background:white;display:none}
+.plan-card.selected .plan-radio-dot{display:block}
+.plan-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.plan-price{font-size:24px;font-weight:600;margin-bottom:2px}
+.plan-price span{font-size:13px;font-weight:400;color:#64748b}
+.plan-limit{font-size:12px;color:#64748b;margin-bottom:.75rem}
+.plan-feat{font-size:12px;color:#475569;padding:3px 0;display:flex;align-items:center;gap:6px}
+.plan-feat::before{content:'✓';color:#16a34a;font-weight:600}
+
+/* ADD-ONS */
+.section-title{font-size:15px;font-weight:600;margin-bottom:.5rem}
+.section-sub{font-size:13px;color:#64748b;margin-bottom:1rem}
+.addon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:2rem}
+.addon-card{border:1.5px solid #e2e8f0;border-radius:12px;padding:1rem;cursor:pointer;transition:all .15s;background:white;display:flex;align-items:flex-start;gap:10px}
+.addon-card:hover{border-color:#7c3aed}
+.addon-card.selected{border-color:#7c3aed;background:#faf5ff}
+.addon-check{width:18px;height:18px;border-radius:5px;border:2px solid #e2e8f0;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s;font-size:11px}
+.addon-card.selected .addon-check{background:#7c3aed;border-color:#7c3aed;color:white}
+.addon-icon{font-size:20px;flex-shrink:0}
+.addon-info{flex:1}
+.addon-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.addon-desc{font-size:11px;color:#64748b;line-height:1.5}
+.addon-price{font-size:12px;font-weight:600;color:#7c3aed;margin-top:3px}
+
+/* ORDER SUMMARY + PAYMENT */
+.bottom-row{display:grid;grid-template-columns:1fr 380px;gap:1.5rem;align-items:start}
+.summary-card{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem}
+.summary-title{font-size:14px;font-weight:600;margin-bottom:1rem}
+.summary-row{display:flex;justify-content:space-between;font-size:13px;color:#475569;padding:5px 0;border-bottom:1px solid #f8fafc}
+.summary-row:last-of-type{border-bottom:none}
+.summary-divider{border:none;border-top:1px solid #e2e8f0;margin:.75rem 0}
+.summary-total{display:flex;justify-content:space-between;font-size:16px;font-weight:600;margin-bottom:.5rem}
+.summary-trial{font-size:12px;color:#16a34a;text-align:center;margin-bottom:1rem}
+.payment-card{background:white;border:1px solid #e2e8f0;border-radius:14px;padding:1.5rem}
+.payment-title{font-size:14px;font-weight:600;margin-bottom:1rem}
+.field{margin-bottom:12px}
+.field label{font-size:12px;font-weight:500;color:#334155;display:block;margin-bottom:4px}
+.field input{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:13px;font-family:'Inter',sans-serif;background:white}
+.field input:focus{outline:2px solid #16a34a;border-color:transparent}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card-element-wrap{border:1.5px solid #e2e8f0;border-radius:9px;padding:11px 12px;background:white;margin-bottom:12px}
+.pay-btn{width:100%;padding:13px;border-radius:10px;border:none;background:#16a34a;color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s}
+.pay-btn:hover{opacity:.9}
+.pay-btn:disabled{opacity:.5;cursor:not-allowed}
+.secure-note{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#94a3b8;margin-top:.75rem}
+.err{background:#fee2e2;color:#dc2626;font-size:12px;padding:8px 12px;border-radius:8px;margin-bottom:12px;display:none}
+.ok{background:#dcfce7;color:#16a34a;font-size:13px;padding:12px;border-radius:8px;margin-bottom:12px;display:none;text-align:center;line-height:1.6}
+
+/* TRUST ROW */
+.trust-row{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;padding-top:2rem;border-top:1px solid #e2e8f0}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b}
+
+@media(max-width:700px){
+  .bottom-row{grid-template-columns:1fr}
+  .main{padding:2rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">
+    <div class="logo-mark">💚</div>
+    <span class="logo-text">Superb</span>
+  </a>
+  <div class="secure-badge">🔒 Secure checkout powered by Stripe</div>
+</nav>
+
+<div class="main">
+  <div style="text-align:center;margin-bottom:2rem">
+    <div class="trial-badge">🎉 2 months completely free — no card charged until your trial ends</div>
+    <h1 class="page-title">Choose your plan</h1>
+    <p class="page-sub">Select your company size and any add-ons. You will not be charged for 60 days.</p>
+  </div>
+
+  <!-- BASE PLANS -->
+  <div class="section-title">1. Select your plan</div>
+  <div class="section-sub">Based on the number of employees in your company</div>
+  <div class="plan-grid">
+    <div class="plan-card" data-price="149" data-name="Starter" onclick="selectPlan(this)">
+      <div class="plan-radio"><div class="plan-radio-dot"></div></div>
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">£149<span>/mo</span></div>
+      <div class="plan-limit">Up to 25 employees</div>
+      <div class="plan-feat">Weekly mood check-ins</div>
+      <div class="plan-feat">Anonymous mail centre</div>
+      <div class="plan-feat">Fitness competitions</div>
+      <div class="plan-feat">Custom EAP settings</div>
+      <div class="plan-feat">Both apps included</div>
+    </div>
+    <div class="plan-card featured selected" data-price="299" data-name="Growth" onclick="selectPlan(this)">
+      <div class="plan-popular">Most popular</div>
+      <div class="plan-radio"><div class="plan-radio-dot"></div></div>
+      <div class="plan-name">Growth</div>
+      <div class="plan-price">£299<span>/mo</span></div>
+      <div class="plan-limit">26–75 employees</div>
+      <div class="plan-feat">Everything in Starter</div>
+      <div class="plan-feat">Priority support</div>
+      <div class="plan-feat">Weekly summary reports</div>
+      <div class="plan-feat">Sub-team analytics</div>
+      <div class="plan-feat">All add-ons available</div>
+    </div>
+    <div class="plan-card" data-price="499" data-name="Scale" onclick="selectPlan(this)">
+      <div class="plan-radio"><div class="plan-radio-dot"></div></div>
+      <div class="plan-name">Scale</div>
+      <div class="plan-price">£499<span>/mo</span></div>
+      <div class="plan-limit">76–150 employees</div>
+      <div class="plan-feat">Everything in Growth</div>
+      <div class="plan-feat">Custom branding</div>
+      <div class="plan-feat">Dedicated onboarding</div>
+      <div class="plan-feat">API access</div>
+      <div class="plan-feat">SLA guarantee</div>
+    </div>
+  </div>
+
+  <!-- ADD-ONS -->
+  <div class="section-title">2. Add optional features</div>
+  <div class="section-sub">Each add-on can be enabled or disabled at any time from your dashboard</div>
+  <div class="addon-grid">
+    <div class="addon-card" data-price="49" data-name="Holiday Planner" onclick="toggleAddon(this)">
+      <div class="addon-check"></div>
+      <div class="addon-icon">🏖️</div>
+      <div class="addon-info">
+        <div class="addon-name">Holiday Planner</div>
+        <div class="addon-desc">Employees request time off in the app. Approve or deny with one click.</div>
+        <div class="addon-price">+£49/month</div>
+      </div>
+    </div>
+    <div class="addon-card" data-price="29" data-name="Regulations Centre" onclick="toggleAddon(this)">
+      <div class="addon-check"></div>
+      <div class="addon-icon">📋</div>
+      <div class="addon-info">
+        <div class="addon-name">Regulations Centre</div>
+        <div class="addon-desc">Upload company policies and handbooks for employees to read.</div>
+        <div class="addon-price">+£29/month</div>
+      </div>
+    </div>
+    <div class="addon-card" data-price="79" data-name="Courses Centre" onclick="toggleAddon(this)">
+      <div class="addon-check"></div>
+      <div class="addon-icon">🎓</div>
+      <div class="addon-info">
+        <div class="addon-name">Courses Centre</div>
+        <div class="addon-desc">Create training courses on first aid, posture, fire safety, and more.</div>
+        <div class="addon-price">+£79/month</div>
+      </div>
+    </div>
+    <div class="addon-card" data-price="39" data-name="AI Wellness Resources" onclick="toggleAddon(this)">
+      <div class="addon-check"></div>
+      <div class="addon-icon">🤖</div>
+      <div class="addon-info">
+        <div class="addon-name">AI Wellness Resources</div>
+        <div class="addon-desc">Employees access AI-generated wellbeing articles on demand.</div>
+        <div class="addon-price">+£39/month</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+
+    <!-- ORDER SUMMARY -->
+    <div class="summary-card">
+      <div class="summary-title">Order summary</div>
+      <div id="summary-rows">
+        <div class="summary-row"><span>Growth plan (26–75 employees)</span><span>£299/mo</span></div>
+      </div>
+      <hr class="summary-divider">
+      <div class="summary-total"><span>Total per month</span><span id="summary-total">£299</span></div>
+      <div class="summary-trial">✓ First 2 months completely free · billed from month 3</div>
+      <div style="font-size:12px;color:#64748b;line-height:1.7">
+        <b>What happens next:</b><br>
+        1. Enter your details and card (not charged today)<br>
+        2. Your workspace is created instantly<br>
+        3. Share your team code with employees<br>
+        4. First payment taken after your 60-day trial
+      </div>
+    </div>
+
+    <!-- PAYMENT FORM -->
+    <div class="payment-card">
+      <div class="payment-title">Your details</div>
+      <div class="err" id="pay-err"></div>
+      <div class="ok" id="pay-ok"></div>
+      <div class="field"><label>Company name</label><input type="text" id="pay-co" placeholder="Acme Ltd"></div>
+      <div class="field"><label>Your name</label><input type="text" id="pay-nm" placeholder="Sarah Johnson"></div>
+      <div class="field"><label>Email</label><input type="email" id="pay-em" placeholder="sarah@company.co.uk"></div>
+      <div class="field"><label>Password</label><input type="password" id="pay-pw" placeholder="6+ characters"></div>
+      <hr style="border:none;border-top:1px solid #f1f5f9;margin:.75rem 0">
+      <div class="payment-title" style="margin-bottom:.75rem">Payment details</div>
+      <div style="font-size:12px;color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;margin-bottom:12px">
+        💳 Your card will not be charged for 60 days
+      </div>
+      <div class="field">
+        <label>Card details</label>
+        <div class="card-element-wrap" id="card-element">
+          <!-- Stripe Card Element mounts here -->
+          <div style="font-size:13px;color:#94a3b8;font-style:italic">Card input loads when Stripe key is configured</div>
+        </div>
+      </div>
+      <button class="pay-btn" id="pay-btn" onclick="submitPayment()">
+        Start my free 2-month trial
+      </button>
+      <div class="secure-note">🔒 Secured by Stripe · 256-bit SSL encryption</div>
+    </div>
+
+  </div>
+
+  <!-- TRUST ROW -->
+  <div class="trust-row">
+    <div class="trust-item">✅ Cancel any time</div>
+    <div class="trust-item">✅ No setup fees</div>
+    <div class="trust-item">✅ GDPR compliant</div>
+    <div class="trust-item">✅ Scottish business</div>
+    <div class="trust-item">✅ 2 months free</div>
+  </div>
+</div>
+
+<script>
+// ============================================
+// STRIPE CONFIGURATION
+// ============================================
+// 1. Create a free account at stripe.com
+// 2. Go to Developers → API keys
+// 3. Copy your "Publishable key" (starts with pk_live_ or pk_test_)
+// 4. Paste it below replacing YOUR_STRIPE_PUBLISHABLE_KEY
+// 5. In your Supabase backend or server, use your Secret key to create
+//    subscriptions (never put the secret key in frontend code)
+// ============================================
+var STRIPE_KEY = 'YOUR_STRIPE_PUBLISHABLE_KEY';
+
+// Price IDs from your Stripe dashboard
+// Create products in Stripe → Products → Add product
+// Then copy the Price ID (starts with price_) for each
+var PRICE_IDS = {
+  Starter: 'price_STARTER_ID',
+  Growth: 'price_GROWTH_ID',
+  Scale: 'price_SCALE_ID',
+  'Holiday Planner': 'price_HOLIDAY_ID',
+  'Regulations Centre': 'price_REGULATIONS_ID',
+  'Courses Centre': 'price_COURSES_ID',
+  'AI Wellness Resources': 'price_AI_RESOURCES_ID'
+};
+
+// Also set your Supabase details here (same as manager app)
+var SUPABASE_URL = 'YOUR_SUPABASE_URL';
+var SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+var selectedPlan = { name: 'Growth', price: 299 };
+var selectedAddons = [];
+var stripe = null;
+var cardElement = null;
+
+// Init Stripe if key is set
+if (STRIPE_KEY !== 'YOUR_STRIPE_PUBLISHABLE_KEY') {
+  stripe = Stripe(STRIPE_KEY);
+  var elements = stripe.elements();
+  cardElement = elements.create('card', {
+    style: {
+      base: { fontSize: '13px', fontFamily: 'Inter, sans-serif', color: '#0f172a', '::placeholder': { color: '#94a3b8' } }
+    }
+  });
+  cardElement.mount('#card-element');
+}
+
+function selectPlan(el) {
+  document.querySelectorAll('.plan-card').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedPlan = { name: el.getAttribute('data-name'), price: parseInt(el.getAttribute('data-price')) };
+  updateSummary();
+}
+
+function toggleAddon(el) {
+  el.classList.toggle('selected');
+  var check = el.querySelector('.addon-check');
+  check.textContent = el.classList.contains('selected') ? '✓' : '';
+  var name = el.getAttribute('data-name');
+  var price = parseInt(el.getAttribute('data-price'));
+  var idx = selectedAddons.findIndex(function(a) { return a.name === name; });
+  if (idx > -1) {
+    selectedAddons.splice(idx, 1);
+  } else {
+    selectedAddons.push({ name: name, price: price });
+  }
+  updateSummary();
+}
+
+function updateSummary() {
+  var html = '<div class="summary-row"><span>' + selectedPlan.name + ' plan</span><span>£' + selectedPlan.price + '/mo</span></div>';
+  var total = selectedPlan.price;
+  selectedAddons.forEach(function(a) {
+    html += '<div class="summary-row"><span>' + a.name + '</span><span>+£' + a.price + '/mo</span></div>';
+    total += a.price;
+  });
+  document.getElementById('summary-rows').innerHTML = html;
+  document.getElementById('summary-total').textContent = '£' + total + '/mo';
+}
+
+async function submitPayment() {
+  var co = document.getElementById('pay-co').value.trim();
+  var nm = document.getElementById('pay-nm').value.trim();
+  var em = document.getElementById('pay-em').value.trim();
+  var pw = document.getElementById('pay-pw').value;
+  var errEl = document.getElementById('pay-err');
+  errEl.style.display = 'none';
+
+  if (!co || !nm || !em || pw.length < 6) {
+    errEl.textContent = 'Please fill in all your details. Password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  var btn = document.getElementById('pay-btn');
+  btn.disabled = true;
+  btn.textContent = 'Setting up your workspace...';
+
+  // If Stripe is not yet configured, show demo success
+  if (!stripe || !cardElement) {
+    setTimeout(function() {
+      document.getElementById('pay-ok').innerHTML =
+        '🎉 <b>Workspace created!</b><br>' +
+        'In the live app you would now receive a confirmation email and be taken to your dashboard.<br><br>' +
+        'To go live: configure your Stripe key and Supabase details at the top of this file.';
+      document.getElementById('pay-ok').style.display = 'block';
+      btn.textContent = 'Start my free 2-month trial';
+      btn.disabled = false;
+    }, 1500);
+    return;
+  }
+
+  // Create payment method via Stripe
+  var result = await stripe.createPaymentMethod({
+    type: 'card',
+    card: cardElement,
+    billing_details: { name: nm, email: em }
+  });
+
+  if (result.error) {
+    errEl.textContent = result.error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Start my free 2-month trial';
+    return;
+  }
+
+  // Send to your backend / Supabase Edge Function to create subscription
+  // For now we store the intent locally and redirect to the manager app
+  // In production: POST to your backend with result.paymentMethod.id
+  // and create a Stripe subscription with a 60-day trial period
+  var priceIds = [PRICE_IDS[selectedPlan.name]];
+  selectedAddons.forEach(function(a) {
+    if (PRICE_IDS[a.name]) priceIds.push(PRICE_IDS[a.name]);
+  });
+
+  localStorage.setItem('mgr_signup_data', JSON.stringify({ company: co, name: nm, email: em }));
+  localStorage.setItem('mgr_action', 'signup');
+  localStorage.setItem('mgr_plan', selectedPlan.name);
+  localStorage.setItem('mgr_addons', JSON.stringify(selectedAddons.map(function(a) { return a.name; })));
+
+  document.getElementById('pay-ok').innerHTML = '🎉 <b>Trial started!</b><br>Taking you to your dashboard now...';
+  document.getElementById('pay-ok').style.display = 'block';
+  setTimeout(function() { window.location.href = 'manager.html'; }, 2000);
+}
+
+// Init summary
+updateSummary();
+</script>
+
+</body>
+</html>
